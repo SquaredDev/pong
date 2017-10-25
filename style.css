@@ -1,3 +1,16 @@
 *{
   background-color: pink;
 }
+
+body {
+  display: flex;
+  justify-content: space-around;
+
+}
+
+canvas {
+  border: solid 1px #fff;
+  image-rendering: pixelated;
+  height: 100%;
+  width: auto;
+}

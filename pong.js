@@ -5,6 +5,16 @@ class Vec
       this.x = x;
       this.y = y;
     }
+    get len()
+    {
+      return Math.sqrt(this.x * this.x + this.y * this.y);
+    }
+    set len(value)
+    {
+      const fact = value / this.len;
+      this.x *= fact;
+      this.y *= fact;
+    }
 }
 
 class Rect
@@ -80,12 +90,45 @@ class Pong
   };
   callback();
 
+  this.CHARS_PIXEL = 10;
+  this.CHARS = [
+    '111101101101111',
+    '010010010010010',
+    '111001111100111',
+    '111001111001111',
+    '101101111001001',
+    '111100111001111',
+    '111100111101111',
+    '111001001001001',
+    '111101111101111',
+    '111101111001111',
+  ].map(str => {
+    const canvas = document.createElement('canvas');
+    canvas.height = this.CHARS_PIXEL * 5;
+    canvas.width = this.CHARS_PIXEL * 3;
+    const context = canvas.getContext('2d');
+    context.fillStyle = '#fff'
+    str.split('').forEach((fill, i) => {
+      if (fill === '1') {
+        context.fillRect(
+          (i % 3) * this.CHARS_PIXEL,
+          (i / 3 | 0) * this.CHARS_PIXEL,
+          this.CHARS_PIXEL,
+          this.CHARS_PIXEL);
+      }
+    });
+    return canvas;
+  });
+
   this.reset();
   }
   collide(player, ball) {
     if (player.left < ball.right && player.right > ball.left &&
         player.top < ball.bottom && player.bottom > ball.top) {
+        const len = ball.vel.len;
         ball.vel.x = -ball.vel.x;
+        ball.vel.y += 300 * (Math.random() - .5);
+        ball.vel.len = len * 1.05;
         }
   }
   draw()
@@ -96,6 +139,8 @@ class Pong
 
     this.drawRect(this.ball);
     this.players.forEach(player => this.drawRect(player));
+
+    this.drawScore();
   }
   drawRect(rect)
   {
@@ -103,13 +148,32 @@ class Pong
     this._context.fillRect(rect.left, rect.top,
                            rect.size.x, rect.size.y);
   }
+  drawScore()
+  {
+    const align = this._canvas.width / 3;
+    const CHAR_W = this.CHARS_PIXEL * 4;
+    this.players.forEach((player, index) => {
+      const chars = player.score.toString().split('');
+      const offset = align * (index + 1) - (CHAR_W * chars.length / 2) + this.CHARS_PIXEL /2;
+      chars.forEach((char, pos) => {
+        this._context.drawImage(this.CHARS[char|0], offset + pos * CHAR_W, 20);
+      })
+    })
+   }
 
   reset(){
-    this.ball.pos.x = 100;
-    this.ball.pos.y = 50;
+    this.ball.pos.x = this._canvas.width / 2;
+    this.ball.pos.y = this._canvas.height / 2;
 
-    this.ball.vel.x = 300;
-    this.ball.vel.y = 300;
+    this.ball.vel.x = 0;
+    this.ball.vel.y = 0;
+  }
+  start() {
+    if (this.ball.vel.x === 0 && this.ball.vel.y === 0) {
+      this.ball.vel.x = 300 * (Math.random() > .5 ? 1 : -1);
+      this.ball.vel.y = 300 * (Math.random() * 2 - 1);
+      this.ball.vel.len = 200;
+    }
   }
   update(dt) {
     this.ball.pos.x += this.ball.vel.x * dt;
@@ -137,4 +201,8 @@ const pong = new Pong(canvas);
 
 canvas.addEventListener('mousemove', (e) => {
   pong.players[0].pos.y = e.offsetY;
+});
+
+canvas.addEventListener('click', (e) => {
+  pong.start();
 });
